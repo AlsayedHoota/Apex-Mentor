@@ -1,55 +1,111 @@
-# Apex Runner
+# Apex Mentor
 
-**Give AI a real workspace.**
+**Learn with a teacher that remembers.**
 
-Apex Runner is a private execution layer for AI agents. It gives an assistant controlled access to a workspace where it can inspect files, apply changes, run commands, test code, and return verified results.
+Apex Mentor is a private AI learning companion backend. It keeps a structured memory of what you are learning, what you understand, what you forget, and what needs review. It is designed to help ChatGPT act more like a personalized teacher instead of a simple flashcard reviewer.
 
-This project is designed to run on your own VM first. The assistant should never receive unrestricted control over your full machine. Apex Runner only works inside the configured workspace directory.
+The first version runs locally, in Deepnote, or in a small VM. It exposes a private API that can later be connected to ChatGPT through an MCP server or ChatGPT app.
 
-## What Apex Runner can do in v0
+## What it does in v0
 
-- List files inside the workspace
-- Read files inside the workspace
-- Write files inside the workspace
-- Apply git patches inside the workspace
-- Run guarded shell commands inside the workspace
-- Show git diff
-- Run test/build commands
+- Stores learning concepts in SQLite
+- Imports Anki-style CSV exports
+- Searches concepts by topic, text, tags, and weak areas
+- Tracks review attempts, scores, confidence, and mistakes
+- Calculates due reviews using a simple spaced-repetition model
+- Generates a review context for ChatGPT to teach from
+- Protects private endpoints with a bearer token
 
-## Safety model
-
-Apex Runner is intentionally restricted:
-
-- No access outside `APEX_WORKSPACE_ROOT`
-- No `sudo`
-- No destructive system commands
-- Command timeout
-- Output size limits
-- Optional bearer token for HTTP access
-- Designed to run inside a disposable VM or sandbox
-
-## Quick start on a VM
+## One-command start after cloning
 
 ```bash
-sudo apt update
-sudo apt install -y git curl nodejs npm
-
-git clone https://github.com/AlsayedHoota/Apex-Runner.git
-cd Apex-Runner
-npm install
-cp .env.example .env
-mkdir -p ~/apex-workspace
-npm run dev
+bash scripts/start.sh
 ```
 
-By default, Apex Runner starts an HTTP MCP server on:
+The script will:
+
+1. Create a Python virtual environment
+2. Install dependencies
+3. Create `.env` if missing
+4. Initialize local data folders
+5. Start the API server
+
+Default local URL:
 
 ```text
-http://127.0.0.1:3030/mcp
+http://127.0.0.1:8000
 ```
 
-For remote access, expose it securely using a tunnel such as Cloudflare Tunnel, ngrok, Tailscale, or a reverse proxy with HTTPS.
+API docs:
 
-## Important
+```text
+http://127.0.0.1:8000/docs
+```
 
-Do not expose Apex Runner publicly without authentication. Use a private VM, tunnel access control, and a strong `APEX_AUTH_TOKEN`.
+## Quick test
+
+After the server starts, open another terminal and run:
+
+```bash
+source .venv/bin/activate
+python scripts/demo_seed.py
+```
+
+Then visit:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## Private access
+
+Apex Mentor uses a bearer token.
+
+The first run creates `.env` with:
+
+```env
+APEX_AUTH_TOKEN=change-me
+```
+
+Change it to a strong secret before exposing the server through ngrok, Cloudflare Tunnel, Tailscale, or any HTTPS endpoint.
+
+Requests should include:
+
+```text
+Authorization: Bearer YOUR_TOKEN
+```
+
+## Deepnote setup
+
+In Deepnote:
+
+```bash
+git clone https://github.com/AlsayedHoota/Apex-Mentor.git
+cd Apex-Mentor
+bash scripts/start.sh
+```
+
+For a private external URL, expose port `8000` using your chosen tunnel.
+
+## Anki CSV format
+
+Start with Anki CSV export using columns like:
+
+```csv
+front,back,tags,deck
+```
+
+Import endpoint:
+
+```text
+POST /api/import/anki-csv
+```
+
+## Roadmap
+
+- MCP protocol server
+- ChromaDB/Qdrant semantic vector memory
+- ChatGPT app manifest/config
+- Better review scheduling
+- Topic mastery dashboard
+- APKG import support
